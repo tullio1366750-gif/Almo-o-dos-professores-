@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição Almoço - IERN</title>
+    <style>
+        :root {
+            --primary: #2c7a7b;
+            --secondary: #edf2f7;
+            --accent: #285e61;
+            --text: #2d3748;
+            --warning: #744210;
+            --warning-bg: #feebc8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h2 { text-align: center; color: var(--primary); margin-bottom: 10px; }
+
+        /* Estilo das Regras */
+        .regras {
+            background-color: var(--warning-bg);
+            color: var(--warning);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            border-left: 5px solid #ed8936;
+        }
+
+        .regras h4 { margin: 0 0 8px 0; text-transform: uppercase; }
+        .regras ul { margin: 0; padding-left: 20px; }
+
+        .form-group { margin-bottom: 15px; }
+
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: white;
+            appearance: none; /* Remove seta padrão em alguns browsers */
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover { background-color: var(--accent); transform: translateY(-1px); }
+
+        button:disabled { 
+            background-color: #cbd5e0; 
+            color: #718096;
+            cursor: not-allowed; 
+            transform: none;
+        }
+
+        .status-msg {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .error { background: #fed7d7; color: #9b2c2c; }
+        .success { background: #c6f6d5; color: #22543d; }
+
+        .columns {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .column {
+            flex: 1;
+            background: var(--secondary);
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 150px;
+        }
+
+        .column h3 {
+            font-size: 1.1rem;
+            text-align: center;
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 2px solid #cbd5e0;
+            padding-bottom: 8px;
+        }
+
+        ul { list-style: none; padding: 0; }
+        li {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            border-left: 3px solid var(--primary);
+        }
+
+        @media (max-width: 500px) {
+            .columns { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>IERN - Almoço Diário</h2>
+
+    <div class="regras">
+        <h4>Regras de Inscrição:</h4>
+        <ul>
+            <li><b>Abertura:</b> A partir das 12:00h do dia anterior.</li>
+            <li><b>Fechamento:</b> Até as 08:00h da manhã do dia do almoço.</li>
+            <li>O sistema bloqueia inscrições fora deste intervalo.</li>
+        </ul>
+    </div>
+    
+    <div id="statusArea" class="status-msg"></div>
+
+    <div class="form-group">
+        <label for="professorSelect">Selecione seu Nome:</label>
+        <select id="professorSelect">
+            <option value="">-- Escolha um professor --</option>
+            </select>
+    </div>
+
+    <div class="form-group">
+        <label for="horario">Horário do Almoço:</label>
+        <select id="horario">
+            <option value="11:40">1º Almoço - 11:40</option>
+            <option value="12:20">2º Almoço - 12:20</option>
+        </select>
+    </div>
+
+    <button id="btnInscricao" onclick="registrar()">Confirmar Presença</button>
+
+    <div class="columns">
+        <div class="column">
+            <h3>11:40</h3>
+            <ul id="lista1140"></ul>
+        </div>
+        <div class="column">
+            <h3>12:20</h3>
+            <ul id="lista1220"></ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    // LISTA DE PROFESSORES (Edite aqui para adicionar ou remover nomes)
+    const PROFESSORES = [
+        "Adriano Silva",
+        "Beatriz Souza",
+        "Carlos Eduardo",
+        "Daniela Oliveira",
+        "Fernando Costa",
+        "Gisele Martins",
+        "Helena Rocha",
+        "João Paulo",
+        "Juliana Lima",
+        "Marcos Vinícius",
+        "Patrícia Gomes",
+        "Ricardo Santos"
+    ].sort(); // Ordena a lista de nomes para o select
+
+    function popularSelect() {
+        const select = document.getElementById('professorSelect');
+        PROFESSORES.forEach(prof => {
+            let opt = document.createElement('option');
+            opt.value = prof;
+            opt.innerHTML = prof;
+            select.appendChild(opt);
+        });
+    }
+
+    function verificarHorarioPermitido() {
+        const agora = new Date();
+        const horaAtual = agora.getHours();
+        
+        // Regra: Bloqueado entre 08:00 e 11:59:59
+        if (horaAtual >= 8 && horaAtual < 12) {
+            return {
+                permitido: false,
+                msg: "SISTEMA BLOQUEADO (Inscrições das 12h às 08h)"
+            };
+        }
+        return { permitido: true, msg: "SISTEMA ABERTO" };
+    }
+
+    function atualizarInterface() {
+        const status = verificarHorarioPermitido();
+        const btn = document.getElementById('btnInscricao');
+        const statusArea = document.getElementById('statusArea');
+
+        if (!status.permitido) {
+            btn.disabled = true;
+            statusArea.textContent = status.msg;
+            statusArea.className = "status-msg error";
+        } else {
+            btn.disabled = false;
+            statusArea.textContent = status.msg;
+            statusArea.className = "status-msg success";
+        }
+        renderizarListas();
+    }
+
+    function registrar() {
+        const nome = document.getElementById('professorSelect').value;
+        const horario = document.getElementById('horario').value;
+
+        if (!nome) {
+            alert("Por favor, selecione seu nome na lista.");
+            return;
+        }
+
+        let inscritos = JSON.parse(localStorage.getItem('iern_almoco') || "[]");
+        
+        // Evita que o mesmo professor se inscreva duas vezes no mesmo ciclo
+        if (inscritos.some(p => p.nome === nome)) {
+            alert("Este professor já está inscrito na lista.");
+            return;
+        }
+
+        inscritos.push({ nome, horario });
+        localStorage.setItem('iern_almoco', JSON.stringify(inscritos));
+        
+        alert("Inscrição confirmada!");
+        document.getElementById('professorSelect').value = "";
+        renderizarListas();
+    }
+
+    function renderizarListas() {
+        const inscritos = JSON.parse(localStorage.getItem('iern_almoco') || "[]");
+        const lista1140 = document.getElementById('lista1140');
+        const lista1220 = document.getElementById('lista1220');
+
+        lista1140.innerHTML = "";
+        lista1220.innerHTML = "";
+
+        // Ordenação alfabética dos inscritos
+        inscritos.sort((a, b) => a.nome.localeCompare(b.nome));
+
+        inscritos.forEach(p => {
+            const li = document.createElement('li');
+            li.textContent = p.nome;
+            if (p.horario === "11:40") {
+                lista1140.appendChild(li);
+            } else {
+                lista1220.appendChild(li);
+            }
+        });
+    }
+
+    // Reset automático diário
+    function checkReset() {
+        const lastReset = localStorage.getItem('lastResetDate');
+        const hoje = new Date().toDateString();
+
+        // Se for um novo dia e passar de 12h, limpa a lista para o novo ciclo
+        if (lastReset !== hoje && new Date().getHours() >= 12) {
+            localStorage.setItem('iern_almoco', "[]");
+            localStorage.setItem('lastResetDate', hoje);
+        }
+    }
+
+    // Inicialização
+    popularSelect();
+    checkReset();
+    atualizarInterface();
+    setInterval(atualizarInterface, 30000); // Atualiza o status a cada 30 segundos
+</script>
+
+</body>
+</html>
