@@ -12,10 +12,11 @@
             --text: #2d3748;
             --warning-bg: #fffaf0;
             --date-bg: #ebf8ff;
+            --danger: #e53e3e;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background-color: #e2e8f0;
             margin: 0;
             padding: 10px;
@@ -32,7 +33,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        h2 { text-align: center; color: var(--primary); margin: 0 0 10px 0; font-size: 1.5rem; }
+        h2 { text-align: center; color: var(--primary); margin: 0 0 10px 0; }
 
         .data-alvo {
             text-align: center;
@@ -41,10 +42,8 @@
             padding: 12px;
             border-radius: 12px;
             font-weight: bold;
-            font-size: 1.1rem;
             margin-bottom: 15px;
             border: 1px solid #bee3f8;
-            line-height: 1.4;
         }
 
         .regras {
@@ -58,7 +57,7 @@
         }
 
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: bold; color: var(--text); }
+        label { display: block; margin-bottom: 6px; font-weight: bold; }
 
         select {
             width: 100%;
@@ -66,9 +65,6 @@
             border: 2px solid #e2e8f0;
             border-radius: 10px;
             font-size: 16px;
-            background-color: #f8fafc;
-            color: var(--text);
-            cursor: pointer;
         }
 
         button {
@@ -81,11 +77,9 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.3s ease;
         }
 
-        button:hover { background-color: var(--accent); }
-        button:disabled { background-color: #cbd5e0; cursor: not-allowed; }
+        button:disabled { background-color: #cbd5e0; }
 
         .status-msg {
             font-weight: bold;
@@ -93,15 +87,14 @@
             margin-bottom: 15px;
             padding: 10px;
             border-radius: 8px;
-            font-size: 0.9rem;
         }
 
-        .error { background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
-        .success { background: #f0fff4; color: #2f855a; border: 1px solid #98fb98; }
+        .error { background: #fff5f5; color: #c53030; }
+        .success { background: #f0fff4; color: #2f855a; }
 
         .columns { display: flex; gap: 15px; margin-top: 25px; }
-        .column { flex: 1; background: #f7fafc; padding: 15px; border-radius: 12px; min-height: 200px; border: 1px solid #edf2f7; }
-        .column h3 { font-size: 1rem; text-align: center; margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        .column { flex: 1; background: #f7fafc; padding: 15px; border-radius: 12px; min-height: 150px; }
+        .column h3 { font-size: 1rem; text-align: center; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
 
         ul { list-style: none; padding: 0; }
         li {
@@ -110,21 +103,44 @@
             margin-bottom: 6px;
             border-radius: 8px;
             font-size: 0.9rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-left: 4px solid var(--primary);
         }
 
-        @media (max-width: 480px) {
-            .columns { flex-direction: column; }
-            h2 { font-size: 1.2rem; }
+        .btn-del {
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            display: none; /* Escondido por padrão */
         }
+
+        .adm-section {
+            margin-top: 30px;
+            text-align: center;
+            border-top: 1px dashed #cbd5e0;
+            padding-top: 15px;
+        }
+
+        .btn-adm {
+            background: #718096;
+            width: auto;
+            padding: 8px 20px;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 480px) { .columns { flex-direction: column; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>IERN - Lista de Almoço</h2>
-    
     <div id="dataExibicao" class="data-alvo"></div>
 
     <div class="regras">
@@ -136,14 +152,14 @@
     <div id="statusArea" class="status-msg"></div>
 
     <div class="form-group">
-        <label for="professorSelect">Nome do Professor(a):</label>
+        <label>Nome do Professor(a):</label>
         <select id="professorSelect">
             <option value="">-- Selecione seu nome --</option>
         </select>
     </div>
 
     <div class="form-group">
-        <label for="horario">Horário Desejado:</label>
+        <label>Horário Desejado:</label>
         <select id="horario">
             <option value="11:40">11:40 (1º Almoço)</option>
             <option value="12:20">12:20 (2º Almoço)</option>
@@ -162,14 +178,20 @@
             <ul id="lista1220"></ul>
         </div>
     </div>
+
+    <div class="adm-section">
+        <button class="btn-adm" id="toggleAdm" onclick="ativarModoAdm()">Acesso ADM</button>
+    </div>
 </div>
 
 <script>
-    // LISTA DE PROFESSORES ATUALIZADA
+    const SENHA_ADM = "iern123"; // ALTERE SUA SENHA AQUI
+    let modoAdmAtivo = false;
+
     const PROFESSORES = [
         "Acacio", "Aetius", "Ana Cristina", "Arthur", "Audra", "Bruna", 
         "Ana Carolina", "Clea", "Cléo", "Dayse", "Edson", "Eduardo", 
-        "Elaine", "Emanuelly", "Felipe", "Francisco", "Helton", "Iésu", "Jéssica", 
+        "Elaine", "Felipe", "Francisco", "Helton", "Iésu", "Jéssica", 
         "Joás", "Josangela", "Miqueias", "Pietro", "Romênia", "Rogério", 
         "Rosivaldo", "Rusiella", "Sheila", "Sueilha", "Sumara", "Themine", 
         "Túllio", "Waltecia"
@@ -190,28 +212,22 @@
         const hora = agora.getHours();
         let dataAlvo = new Date();
         if (hora >= 12) dataAlvo.setDate(agora.getDate() + 1);
-        
-        return dataAlvo.toLocaleDateString('pt-BR', { 
-            weekday: 'long', day: '2-digit', month: 'long'
-        });
+        return dataAlvo.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
     }
 
     function atualizarInterface() {
-        const agora = new Date();
-        const hora = agora.getHours();
+        const hora = new Date().getHours();
         const btn = document.getElementById('btnInscricao');
         const statusArea = document.getElementById('statusArea');
-        const dataExibicao = document.getElementById('dataExibicao');
-
-        dataExibicao.innerHTML = `📅 Almoço de:<br><strong>${obterDataAlvo()}</strong>`;
+        document.getElementById('dataExibicao').innerHTML = `📅 Almoço de:<br><strong>${obterDataAlvo()}</strong>`;
 
         if (hora >= 8 && hora < 12) {
             btn.disabled = true;
-            statusArea.textContent = "🔒 Inscrições encerradas para hoje.";
+            statusArea.textContent = "🔒 Inscrições encerradas.";
             statusArea.className = "status-msg error";
         } else {
             btn.disabled = false;
-            statusArea.textContent = "✅ Sistema aberto para inscrições.";
+            statusArea.textContent = "✅ Sistema aberto.";
             statusArea.className = "status-msg success";
         }
         renderizarListas();
@@ -220,38 +236,59 @@
     function registrar() {
         const nome = document.getElementById('professorSelect').value;
         const horario = document.getElementById('horario').value;
-
-        if (!nome) { alert("Por favor, selecione seu nome."); return; }
+        if (!nome) { alert("Selecione seu nome."); return; }
 
         let inscritos = JSON.parse(localStorage.getItem('iern_almoco') || "[]");
-        
-        if (inscritos.some(p => p.nome === nome)) {
-            alert("Você já está inscrito nesta lista.");
-            return;
-        }
+        if (inscritos.some(p => p.nome === nome)) { alert("Você já está na lista!"); return; }
 
         inscritos.push({ nome, horario });
         localStorage.setItem('iern_almoco', JSON.stringify(inscritos));
-        
         document.getElementById('professorSelect').value = "";
         renderizarListas();
-        alert("Inscrição confirmada!");
+    }
+
+    function ativarModoAdm() {
+        if (!modoAdmAtivo) {
+            const senha = prompt("Digite a senha do administrador:");
+            if (senha === SENHA_ADM) {
+                modoAdmAtivo = true;
+                document.getElementById('toggleAdm').textContent = "Sair do ADM";
+                document.getElementById('toggleAdm').style.background = "#2d3748";
+                renderizarListas();
+            } else {
+                alert("Senha incorreta!");
+            }
+        } else {
+            modoAdmAtivo = false;
+            document.getElementById('toggleAdm').textContent = "Acesso ADM";
+            document.getElementById('toggleAdm').style.background = "#718096";
+            renderizarListas();
+        }
+    }
+
+    function removerProfessor(nome) {
+        if (confirm(`Remover ${nome} da lista?`)) {
+            let inscritos = JSON.parse(localStorage.getItem('iern_almoco') || "[]");
+            inscritos = inscritos.filter(p => p.nome !== nome);
+            localStorage.setItem('iern_almoco', JSON.stringify(inscritos));
+            renderizarListas();
+        }
     }
 
     function renderizarListas() {
         const inscritos = JSON.parse(localStorage.getItem('iern_almoco') || "[]");
         const lista1140 = document.getElementById('lista1140');
         const lista1220 = document.getElementById('lista1220');
-
         lista1140.innerHTML = "";
         lista1220.innerHTML = "";
         
-        // Ordena a lista de inscritos em ordem alfabética
         inscritos.sort((a, b) => a.nome.localeCompare(b, 'pt-BR'));
 
         inscritos.forEach(p => {
             const li = document.createElement('li');
-            li.textContent = p.nome;
+            li.innerHTML = `<span>${p.nome}</span> 
+                           <button class="btn-del" style="display: ${modoAdmAtivo ? 'block' : 'none'}" 
+                           onclick="removerProfessor('${p.nome}')">Excluir</button>`;
             (p.horario === "11:40" ? lista1140 : lista1220).appendChild(li);
         });
     }
@@ -259,7 +296,6 @@
     function checkReset() {
         const lastReset = localStorage.getItem('lastResetDate');
         const hoje = new Date().toDateString();
-        // Reset às 12h para iniciar o ciclo do dia seguinte
         if (lastReset !== hoje && new Date().getHours() >= 12) {
             localStorage.setItem('iern_almoco', "[]");
             localStorage.setItem('lastResetDate', hoje);
@@ -271,6 +307,5 @@
     atualizarInterface();
     setInterval(atualizarInterface, 30000);
 </script>
-
 </body>
 </html>
